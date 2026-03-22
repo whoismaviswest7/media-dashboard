@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Media Industry Tracker</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#060608; --surface:#0e0e14; --card:#13131c; --card2:#181824;
+  --border:#22223a; --border2:#2e2e4a;
+  --accent:#c8ff00; --purple:#7b61ff;
+  --text:#ececf4; --muted:#55556e; --muted2:#8888a8;
+  --red:#e50914; --blue:#3d8ef0; --teal:#00d4aa; --amber:#ffaa33; --violet:#7b5cf0;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(200,255,0,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(200,255,0,0.025) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0}
+body::after{content:'';position:fixed;inset:0;background:radial-gradient(ellipse 600px 400px at 10% 20%,rgba(200,255,0,0.03) 0%,transparent 70%),radial-gradient(ellipse 500px 500px at 90% 80%,rgba(123,97,255,0.04) 0%,transparent 70%);pointer-events:none;z-index:0}
+
+.wrap{max-width:1360px;margin:0 auto;padding:48px 28px 80px;position:relative;z-index:1}
+
+/* Header */
+header{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:56px;gap:24px;flex-wrap:wrap}
+.eyebrow{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:3px;color:var(--accent);text-transform:uppercase;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+.eyebrow::before{content:'';display:block;width:24px;height:1px;background:var(--accent)}
+h1{font-family:'Bebas Neue',sans-serif;font-size:clamp(52px,7vw,96px);line-height:0.88;letter-spacing:2px}
+h1 em{font-style:normal;color:var(--accent)}
+h1 .outline{-webkit-text-stroke:1.5px rgba(236,236,244,0.2);color:transparent}
+.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:8px;padding-top:8px}
+.badge{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border2);padding:8px 16px;border-radius:100px;font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);letter-spacing:1.5px}
+.pulse{width:6px;height:6px;background:var(--accent);border-radius:50%;animation:blink 2s infinite;flex-shrink:0}
+@keyframes blink{0%,100%{opacity:1;box-shadow:0 0 6px var(--accent)}50%{opacity:0.3;box-shadow:none}}
+
+/* AI Bar */
+.ai-bar{background:linear-gradient(135deg,#13131c 0%,#1a1030 100%);border:1px solid var(--border2);border-radius:20px;padding:28px 32px;margin-bottom:36px;display:flex;align-items:center;justify-content:space-between;gap:24px;flex-wrap:wrap;position:relative;overflow:hidden}
+.ai-bar::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--purple),transparent)}
+.ai-bar-l{display:flex;align-items:center;gap:18px}
+.ai-icon{width:44px;height:44px;background:linear-gradient(135deg,var(--purple),#a855f7);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.ai-bar-txt h3{font-size:15px;font-weight:600;margin-bottom:3px}
+.ai-bar-txt p{font-size:12px;color:var(--muted2)}
+.ai-btn{display:flex;align-items:center;gap:10px;padding:13px 28px;background:linear-gradient(135deg,var(--purple),#a855f7);border:none;border-radius:12px;color:white;font-family:'DM Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer;transition:all .25s;white-space:nowrap;flex-shrink:0}
+.ai-btn:hover{transform:translateY(-2px);box-shadow:0 8px 32px rgba(123,97,255,0.4)}
+.ai-btn:disabled{opacity:.6;cursor:not-allowed;transform:none}
+.ai-btn .spin{width:16px;height:16px;border:2px solid rgba(255,255,255,0.3);border-top-color:white;border-radius:50%;animation:spin .8s linear infinite;display:none}
+.ai-btn.loading .spin{display:block}
+.ai-btn.loading .lbl{display:none}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* AI Result */
+.ai-result{display:none;background:var(--card);border:1px solid var(--border2);border-left:3px solid var(--purple);border-radius:16px;padding:28px 32px;margin-bottom:28px;animation:slideDown .3s ease}
+.ai-result.show{display:block}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.ai-res-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ai-res-tag{font-family:'Space Mono',monospace;font-size:11px;letter-spacing:2px;color:var(--purple);text-transform:uppercase}
+.ai-close{background:none;border:none;color:var(--muted);cursor:pointer;font-size:18px;padding:4px;transition:color .2s}
+.ai-close:hover{color:var(--text)}
+.ins-line{display:flex;gap:12px;padding:8px 0;border-bottom:1px solid var(--border)}
+.ins-line:last-child{border-bottom:none}
+.ins-n{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);min-width:20px;padding-top:2px}
+.ins-txt{font-size:14px;color:var(--muted2);line-height:1.8}
+.ins-txt strong{color:var(--text)}
+
+/* Tabs */
+.tabs{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);padding:4px;border-radius:14px;width:fit-content;margin-bottom:36px}
+.tab{padding:10px 28px;border-radius:10px;border:none;background:transparent;color:var(--muted2);font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;cursor:pointer;transition:all .2s}
+.tab.on{background:var(--accent);color:#060608;font-weight:600}
+.tab:hover:not(.on){color:var(--text);background:var(--card)}
+
+/* Toggles */
+.toggles{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px}
+.tog{display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:100px;border:1px solid var(--border);background:var(--card);color:var(--muted);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;cursor:pointer;transition:all .2s}
+.tog.on{border-color:currentColor}
+.tog-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* Stats */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px}
+.sc{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:22px;position:relative;overflow:hidden;transition:transform .2s,border-color .2s}
+.sc:hover{transform:translateY(-2px);border-color:var(--border2)}
+.sc::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--cc,var(--accent))}
+.sc-lbl{font-family:'Space Mono',monospace;font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px}
+.sc-val{font-family:'Bebas Neue',sans-serif;font-size:38px;letter-spacing:1px;line-height:1}
+.sc-sub{font-size:11px;margin-top:6px}
+.up{color:#4ade80}.dn{color:#f87171}.neu{color:var(--muted2)}
+
+/* Chart cards */
+.cc{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:32px;margin-bottom:24px;transition:border-color .2s}
+.cc:hover{border-color:var(--border2)}
+.cc-hd{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;gap:12px;flex-wrap:wrap}
+.cc-title{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:1px}
+.cc-sub{font-size:11px;color:var(--muted);margin-top:3px;font-family:'Space Mono',monospace}
+.csw{display:flex;gap:3px;background:var(--surface);border:1px solid var(--border);padding:3px;border-radius:8px}
+.csw-btn{padding:5px 12px;border-radius:5px;border:none;background:transparent;color:var(--muted);font-size:11px;font-family:'Space Mono',monospace;cursor:pointer;transition:all .2s}
+.csw-btn.on{background:var(--card2);color:var(--text)}
+.ch{position:relative}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:800px){.grid2{grid-template-columns:1fr}}
+
+/* Table */
+.tc{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:28px;margin-top:24px;overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;color:var(--muted);font-weight:400;font-size:10px;letter-spacing:1.5px;text-transform:uppercase;padding:0 16px 14px 0;border-bottom:1px solid var(--border);font-family:'Space Mono',monospace}
+td{padding:14px 16px 14px 0;border-bottom:1px solid rgba(34,34,58,0.7)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,.015)}
+.co-name{display:flex;align-items:center;gap:10px;font-weight:500}
+.co-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.pill{display:inline-block;padding:3px 10px;border-radius:100px;font-size:10px;font-weight:600;font-family:'Space Mono',monospace}
+
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-bottom:16px;font-size:12px;color:var(--muted2)}
+.leg-item{display:flex;align-items:center;gap:6px}
+.leg-sq{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+
+.sec{display:none}.sec.on{display:block}
+footer{text-align:center;color:var(--muted);font-size:10px;font-family:'Space Mono',monospace;letter-spacing:1px;padding:48px 0 0;text-transform:uppercase}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:var(--surface)}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div>
+      <div class="eyebrow">Media Intelligence Platform</div>
+      <h1>MEDIA<br><em>INDUSTRY</em><br><span class="outline">TRACKER</span></h1>
+    </div>
+    <div class="hdr-right">
+      <div class="badge"><div class="pulse"></div>2019 – 2025 · Verified Data</div>
+      <div class="badge" style="font-size:9px;color:var(--muted)">Sources: Annual Reports · MacroTrends</div>
+    </div>
+  </header>
+
+  <div class="ai-bar">
+    <div class="ai-bar-l">
+      <div class="ai-icon">✦</div>
+      <div class="ai-bar-txt">
+        <h3>AI Market Intelligence</h3>
+        <p>Generate professional industry insights from current data</p>
+      </div>
+    </div>
+    <button class="ai-btn" id="aiBtn" onclick="runAI()">
+      <div class="spin"></div>
+      <span class="lbl">✦ Generate Insights</span>
+    </button>
+  </div>
+
+  <div class="ai-result" id="aiResult">
+    <div class="ai-res-hdr">
+      <div class="ai-res-tag">✦ AI Analysis · <span id="aiTs"></span></div>
+      <button class="ai-close" onclick="document.getElementById('aiResult').classList.remove('show')">✕</button>
+    </div>
+    <div id="aiContent"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" onclick="switchTab('streaming',this)">Streaming</button>
+    <button class="tab" onclick="switchTab('music',this)">Music Labels</button>
+    <button class="tab" onclick="switchTab('boxoffice',this)">Box Office</button>
+  </div>
+
+  <!-- STREAMING -->
+  <div id="streaming" class="sec on">
+    <div class="toggles" id="toggles"></div>
+    <div class="stats" id="stats"></div>
+    <div class="cc">
+      <div class="cc-hd">
+        <div><div class="cc-title">Annual Revenue</div><div class="cc-sub">BILLION USD · 2019–2025</div></div>
+        <div class="csw">
+          <button class="csw-btn on" onclick="setType('line',this)">LINE</button>
+          <button class="csw-btn" onclick="setType('bar',this)">BAR</button>
+        </div>
+      </div>
+      <div id="revLeg" class="legend"></div>
+      <div class="ch" style="height:380px"><canvas id="revChart"></canvas></div>
+    </div>
+    <div class="grid2">
+      <div class="cc">
+        <div class="cc-title" style="font-size:18px">Subscriber Growth</div>
+        <div class="cc-sub" style="margin-bottom:16px">MILLIONS OF PAID SUBSCRIBERS</div>
+        <div id="subLeg" class="legend"></div>
+        <div class="ch" style="height:240px"><canvas id="subChart"></canvas></div>
+      </div>
+      <div class="cc">
+        <div class="cc-title" style="font-size:18px">2025 Market Share</div>
+        <div class="cc-sub" style="margin-bottom:16px">BY REVENUE</div>
+        <div class="ch" style="height:240px"><canvas id="shareChart"></canvas></div>
+      </div>
+    </div>
+    <div class="tc">
+      <div class="cc-title" style="font-size:18px;margin-bottom:20px">Company Overview · 2025</div>
+      <table>
+        <thead><tr><th>Company</th><th>Type</th><th>2024 Rev</th><th>2025 Rev</th><th>Subscribers</th><th>YoY</th></tr></thead>
+        <tbody>
+          <tr><td><div class="co-name"><div class="co-dot" style="background:#e50914"></div>Netflix</div></td><td><span class="pill" style="background:rgba(229,9,20,0.1);color:#e50914">Streaming</span></td><td style="color:var(--muted2)">$39.0B</td><td>$45.2B</td><td style="color:var(--muted2)">330M</td><td class="up">▲ 15.8%</td></tr>
+          <tr><td><div class="co-name"><div class="co-dot" style="background:#3d8ef0"></div>Disney+</div></td><td><span class="pill" style="background:rgba(61,142,240,0.1);color:#3d8ef0">Streaming</span></td><td style="color:var(--muted2)">$24.1B</td><td>$25.8B</td><td style="color:var(--muted2)">160M</td><td class="up">▲ 7.1%</td></tr>
+          <tr><td><div class="co-name"><div class="co-dot" style="background:#00d4aa"></div>Warner Bros</div></td><td><span class="pill" style="background:rgba(0,212,170,0.1);color:#00d4aa">Studio</span></td><td style="color:var(--muted2)">$39.3B</td><td>$37.3B</td><td style="color:var(--muted2)">116M</td><td class="dn">▼ 5.1%</td></tr>
+          <tr><td><div class="co-name"><div class="co-dot" style="background:#ffaa33"></div>Paramount+</div></td><td><span class="pill" style="background:rgba(255,170,51,0.1);color:#ffaa33">Streaming</span></td><td style="color:var(--muted2)">$15.2B</td><td style="color:var(--muted)">—</td><td style="color:var(--muted2)">72M</td><td class="neu">2024 data</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- MUSIC -->
+  <div id="music" class="sec">
+    <div class="stats">
+      <div class="sc" style="--cc:#7b5cf0"><div class="sc-lbl">Universal Music</div><div class="sc-val">$11.1B</div><div class="sc-sub up">▲ 12% · 2023</div></div>
+      <div class="sc" style="--cc:#3d8ef0"><div class="sc-lbl">Sony Music</div><div class="sc-val">$9.8B</div><div class="sc-sub up">▲ 9% · 2023</div></div>
+      <div class="sc" style="--cc:#00d4aa"><div class="sc-lbl">Warner Music</div><div class="sc-val">$6.0B</div><div class="sc-sub up">▲ 11% · 2023</div></div>
+    </div>
+    <div class="cc">
+      <div class="cc-hd"><div><div class="cc-title">Music Label Revenue</div><div class="cc-sub">BILLION USD · 2019–2023</div></div></div>
+      <div class="legend"><span class="leg-item"><span class="leg-sq" style="background:#7b5cf0"></span>Universal</span><span class="leg-item"><span class="leg-sq" style="background:#3d8ef0"></span>Sony Music</span><span class="leg-item"><span class="leg-sq" style="background:#00d4aa"></span>Warner Music</span></div>
+      <div class="ch" style="height:300px"><canvas id="musicRevChart"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-hd"><div><div class="cc-title">Revenue by Format</div><div class="cc-sub">UNIVERSAL MUSIC GROUP · % SHARE</div></div></div>
+      <div class="legend"><span class="leg-item"><span class="leg-sq" style="background:#7b5cf0"></span>Streaming</span><span class="leg-item"><span class="leg-sq" style="background:#3d8ef0"></span>Physical</span><span class="leg-item"><span class="leg-sq" style="background:#00d4aa"></span>Downloads</span><span class="leg-item"><span class="leg-sq" style="background:#ffaa33"></span>Other</span></div>
+      <div class="ch" style="height:260px"><canvas id="musicFmtChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- BOX OFFICE -->
+  <div id="boxoffice" class="sec">
+    <div class="stats">
+      <div class="sc" style="--cc:#e50914"><div class="sc-lbl">Global BO 2023</div><div class="sc-val">$33.9B</div><div class="sc-sub up">▲ 31% vs 2022</div></div>
+      <div class="sc" style="--cc:#ffaa33"><div class="sc-lbl">Top Studio 2023</div><div class="sc-val">Universal</div><div class="sc-sub up">$4.9B Worldwide</div></div>
+      <div class="sc" style="--cc:#3d8ef0"><div class="sc-lbl">Biggest Film 2023</div><div class="sc-val">Barbie</div><div class="sc-sub up">$1.44B Worldwide</div></div>
+      <div class="sc" style="--cc:#00d4aa"><div class="sc-lbl">COVID Low 2020</div><div class="sc-val">$12.0B</div><div class="sc-sub dn">▼ 72% vs 2019</div></div>
+    </div>
+    <div class="cc">
+      <div class="cc-hd"><div><div class="cc-title">Global Box Office Revenue</div><div class="cc-sub">BILLION USD · COVID IMPACT 2020–2021</div></div></div>
+      <div class="ch" style="height:300px"><canvas id="boChart"></canvas></div>
+    </div>
+    <div class="cc">
+      <div class="cc-hd"><div><div class="cc-title">2023 Studio Market Share</div><div class="cc-sub">BY GLOBAL BOX OFFICE GROSS</div></div></div>
+      <div class="ch" style="height:280px"><canvas id="studioChart"></canvas></div>
+    </div>
+  </div>
+
+  <footer>Media Intelligence Platform · Annual Reports · MacroTrends · Business of Apps · March 2026</footer>
+</div>
+
+<script>
+const years=[2019,2020,2021,2022,2023,2024,2025];
+const cos={
+  Netflix:{rev:[20.16,24.99,29.70,31.62,33.72,39.00,45.18],subs:[167,204,222,231,260,302,330],color:'#e50914'},
+  'Disney+':{rev:[0,4.50,16.30,19.20,22.40,24.10,25.80],subs:[0,95,130,161,150,153,160],color:'#3d8ef0'},
+  'Warner Bros':{rev:[33.20,35.00,35.76,43.19,41.32,39.32,37.30],subs:[0,0,74,93,95,97,116],color:'#00d4aa'},
+  'Paramount+':{rev:[14.10,12.30,13.99,14.00,14.60,15.20,null],subs:[0,18,47,56,67,72,null],color:'#ffaa33'}
+};
+const active={Netflix:true,'Disney+':true,'Warner Bros':true,'Paramount+':false};
+const TIP={backgroundColor:'#13131c',borderColor:'#2e2e4a',borderWidth:1,titleColor:'#ececf4',bodyColor:'#8888a8',padding:14,cornerRadius:10};
+const SCALES={x:{grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11}}},y:{grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11},callback:v=>`$${v}B`}}};
+let revChart,subChart,shareChart,cType='line',curTab='streaming';
+
+function buildToggles(){
+  const el=document.getElementById('toggles');el.innerHTML='';
+  Object.entries(cos).forEach(([n,d])=>{
+    const b=document.createElement('button');b.className='tog'+(active[n]?' on':'');b.style.color=active[n]?d.color:'';
+    b.innerHTML=`<span class="tog-dot" style="background:${d.color}"></span>${n}`;
+    b.onclick=()=>{active[n]=!active[n];buildToggles();buildStats();refreshCharts();};
+    el.appendChild(b);
+  });
+}
+
+function buildStats(){
+  const el=document.getElementById('stats');
+  el.innerHTML=Object.entries(cos).filter(([n])=>active[n]).map(([n,d])=>{
+    const last=d.rev.reduce((a,v)=>v!=null?v:a,null);
+    const idx=d.rev.lastIndexOf(last);const prev=idx>0?d.rev[idx-1]:null;
+    const pct=prev&&prev>0?(((last-prev)/prev)*100).toFixed(1):null;
+    const yr=years[idx];const dir=pct>0?'up':pct<0?'dn':'neu';
+    return `<div class="sc" style="--cc:${d.color}"><div class="sc-lbl">${n}</div><div class="sc-val">$${last}B</div><div class="sc-sub ${dir}">${pct?(parseFloat(pct)>0?'▲':'▼')+' '+Math.abs(pct)+'% · '+yr:yr+' data'}</div></div>`;
+  }).join('');
+}
+
+function buildLegend(id){
+  const el=document.getElementById(id);if(!el)return;
+  el.innerHTML=Object.entries(cos).filter(([n])=>active[n]).map(([n,d])=>`<span class="leg-item"><span class="leg-sq" style="background:${d.color}"></span>${n}</span>`).join('');
+}
+
+function getDS(key){
+  return Object.entries(cos).filter(([n])=>active[n]).map(([n,d])=>({
+    label:n,data:d[key],borderColor:d.color,
+    backgroundColor:cType==='bar'?d.color+'bb':d.color+'22',
+    borderWidth:2.5,pointRadius:5,pointHoverRadius:9,tension:0.35,fill:key==='subs',spanGaps:true
+  }));
+}
+
+function refreshCharts(){
+  if(revChart){revChart.config.type=cType;revChart.data.datasets=getDS('rev');revChart.update();}
+  if(subChart){subChart.data.datasets=getDS('subs');subChart.update();}
+  const sa=Object.entries(cos).filter(([n])=>active[n]);
+  const sv=sa.map(([,d])=>d.rev.reduce((a,v)=>v!=null?v:a,0));
+  const tot=sv.reduce((a,b)=>a+b,0);
+  if(shareChart){
+    shareChart.data.labels=sa.map(([n])=>n);
+    shareChart.data.datasets[0].data=sv.map(v=>parseFloat((v/tot*100).toFixed(1)));
+    shareChart.data.datasets[0].backgroundColor=sa.map(([,d])=>d.color);
+    shareChart.update();
+  }
+  buildLegend('revLeg');buildLegend('subLeg');
+}
+
+function setType(t,btn){cType=t;document.querySelectorAll('.csw-btn').forEach(b=>b.classList.remove('on'));btn.classList.add('on');refreshCharts();}
+
+function initCharts(){
+  const sa=Object.entries(cos).filter(([n])=>active[n]);
+  revChart=new Chart(document.getElementById('revChart'),{type:'line',data:{labels:years,datasets:getDS('rev')},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>` ${c.dataset.label}: $${c.parsed.y}B`}}},scales:SCALES}});
+  subChart=new Chart(document.getElementById('subChart'),{type:'line',data:{labels:years,datasets:getDS('subs')},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}M`}}},scales:{x:{grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11}}},y:{grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11},callback:v=>`${v}M`}}}}});
+  shareChart=new Chart(document.getElementById('shareChart'),{type:'doughnut',data:{labels:sa.map(([n])=>n),datasets:[{data:sa.map(([,d])=>d.rev.reduce((a,v)=>v!=null?v:a,0)),backgroundColor:sa.map(([,d])=>d.color),borderColor:'#13131c',borderWidth:4,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:true,position:'right',labels:{color:'#8888a8',boxWidth:11,padding:14,font:{size:12}}},tooltip:{...TIP,callbacks:{label:c=>` ${c.label}: $${c.parsed.toFixed(1)}B`}}}}});
+  buildLegend('revLeg');buildLegend('subLeg');
+}
+
+let musicBuilt=false,boxBuilt=false;
+function switchTab(id,btn){
+  document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById(id).classList.add('on');btn.classList.add('on');curTab=id;
+  if(id==='music'&&!musicBuilt){buildMusic();musicBuilt=true;}
+  if(id==='boxoffice'&&!boxBuilt){buildBox();boxBuilt=true;}
+}
+
+function buildMusic(){
+  const my=[2019,2020,2021,2022,2023];
+  new Chart(document.getElementById('musicRevChart'),{type:'bar',data:{labels:my,datasets:[{label:'Universal',data:[7.16,7.43,8.90,9.93,11.1],backgroundColor:'#7b5cf0bb',borderColor:'#7b5cf0',borderWidth:1,borderRadius:4},{label:'Sony Music',data:[7.5,7.8,8.7,9.0,9.8],backgroundColor:'#3d8ef0bb',borderColor:'#3d8ef0',borderWidth:1,borderRadius:4},{label:'Warner Music',data:[4.5,4.6,5.3,5.4,6.0],backgroundColor:'#00d4aabb',borderColor:'#00d4aa',borderWidth:1,borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},plugins:{legend:{display:false},tooltip:TIP},scales:SCALES}});
+  new Chart(document.getElementById('musicFmtChart'),{type:'bar',data:{labels:my,datasets:[{label:'Streaming',data:[56,62,68,73,77],backgroundColor:'#7b5cf0bb',borderRadius:3},{label:'Physical',data:[22,18,15,12,10],backgroundColor:'#3d8ef0bb',borderRadius:3},{label:'Downloads',data:[14,12,10,8,7],backgroundColor:'#00d4aabb',borderRadius:3},{label:'Other',data:[8,8,7,7,6],backgroundColor:'#ffaa33bb',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{stacked:true,grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11}}},y:{stacked:true,max:100,grid:{color:'rgba(34,34,58,0.6)'},ticks:{color:'#55556e',font:{size:11},callback:v=>`${v}%`}}},plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>` ${c.dataset.label}: ${c.parsed.y}%`}}}}});
+}
+
+function buildBox(){
+  const by=[2019,2020,2021,2022,2023];
+  new Chart(document.getElementById('boChart'),{type:'bar',data:{labels:by,datasets:[{label:'Global Box Office',data:[42.2,12.0,21.3,25.9,33.9],backgroundColor:['#e50914cc','#e5091444','#e5091466','#e5091499','#e50914cc'],borderColor:'#e50914',borderWidth:1,borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{...TIP,callbacks:{label:c=>` $${c.parsed.y}B`}}},scales:SCALES}});
+  new Chart(document.getElementById('studioChart'),{type:'doughnut',data:{labels:['Universal','Disney','Warner Bros','Sony','Paramount','Others'],datasets:[{data:[22,18,17,14,11,18],backgroundColor:['#ffaa33','#3d8ef0','#00d4aa','#7b5cf0','#e87070','#444455'],borderColor:'#13131c',borderWidth:4,hoverOffset:10}]},options:{responsive:true,maintainAspectRatio:false,cutout:'60%',plugins:{legend:{display:true,position:'right',labels:{color:'#8888a8',boxWidth:11,padding:14,font:{size:12}}},tooltip:{...TIP,callbacks:{label:c=>` ${c.label}: ${c.parsed}%`}}}}});
+}
+
+async function runAI(){
+  const btn=document.getElementById('aiBtn');
+  const result=document.getElementById('aiResult');
+  const content=document.getElementById('aiContent');
+  btn.disabled=true;btn.classList.add('loading');
+
+  const activeList=Object.entries(cos).filter(([n])=>active[n]);
+  const dataCtx=activeList.map(([n,d])=>{
+    const last=d.rev.reduce((a,v)=>v!=null?v:a,null);
+    const idx=d.rev.lastIndexOf(last);const prev=idx>0?d.rev[idx-1]:null;
+    const g=prev&&prev>0?(((last-prev)/prev)*100).toFixed(1):'N/A';
+    const lastSub=d.subs.reduce((a,v)=>v!=null?v:a,null);
+    return `${n}: revenue $${last}B (${years[idx]}), YoY growth ${g}%, subscribers ${lastSub}M`;
+  }).join('\n');
+
+  const tabName={streaming:'Streaming',music:'Music Labels',boxoffice:'Box Office'}[curTab];
+  const prompt=`You are a sharp media industry analyst. Based on this ${tabName} data:\n\n${dataCtx}\n\nWrite exactly 4 numbered insights (1. 2. 3. 4.). Each 1-2 sentences, specific, data-driven. Use **bold** for key numbers or names. Focus on competitive dynamics and industry implications for a media production student.`;
+
+  try{
+    const res=await fetch('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({prompt})});
+    if(!res.ok)throw new Error('API error');
+    const data=await res.json();
+    const lines=data.text.split('\n').filter(l=>/^\d[\.\)]/.test(l.trim()));
+    document.getElementById('aiTs').textContent=new Date().toLocaleTimeString();
+    result.classList.add('show');content.innerHTML='';
+    const render=(arr,i=0)=>{
+      if(i>=arr.length)return;
+      const body=arr[i].replace(/^\d[\.\)]\s*/,'').replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>');
+      const div=document.createElement('div');div.className='ins-line';
+      div.innerHTML=`<span class="ins-n">0${i+1}</span><span class="ins-txt">${body}</span>`;
+      content.appendChild(div);setTimeout(()=>render(arr,i+1),150);
+    };
+    render(lines.length?lines:data.text.split('\n').filter(l=>l.trim()).slice(0,4));
+  }catch(e){
+    document.getElementById('aiTs').textContent=new Date().toLocaleTimeString();
+    result.classList.add('show');
+    content.innerHTML=`<div class="ins-line"><span class="ins-n">!</span><span class="ins-txt">Error connecting to AI. Make sure ANTHROPIC_API_KEY is set in Vercel.</span></div>`;
+  }
+  btn.disabled=false;btn.classList.remove('loading');
+}
+
+buildToggles();buildStats();initCharts();
+</script>
+</body>
+</html>
